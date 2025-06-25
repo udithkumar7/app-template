@@ -160,14 +160,33 @@ public class OtpService {
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
+            
+            // Check if new password is valid
+            if (newPassword == null || newPassword.isEmpty()) {
+                return false;
+            }
+            
+            // Check if new password is different from the last 5 passwords
+            String encodedNewPassword = passwordEncoder.encode(newPassword);
+            if (passwordEncoder.matches(newPassword, user.getPassword()) ||
+                passwordEncoder.matches(newPassword, user.getPassword1()) ||
+                passwordEncoder.matches(newPassword, user.getPassword2()) ||
+                passwordEncoder.matches(newPassword, user.getPassword3()) ||
+                passwordEncoder.matches(newPassword, user.getPassword4()) ||
+                passwordEncoder.matches(newPassword, user.getPassword5())) {
+                return false; // Password has been used recently
+            }
+            
             // Shift old passwords
             user.setPassword5(user.getPassword4());
             user.setPassword4(user.getPassword3());
             user.setPassword3(user.getPassword2());
             user.setPassword2(user.getPassword1());
             user.setPassword1(user.getPassword());
+            
             // Set new password
-            user.setPassword(passwordEncoder.encode(newPassword));
+            user.setPassword(encodedNewPassword);
+            
             userRepository.save(user);
             log.info("Password updated for email: {}", email);
             return true;
