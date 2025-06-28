@@ -4,6 +4,7 @@ import com.template.entity.User;
 import com.template.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +20,7 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/{userId}/roles")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<User> assignRoles(
             @PathVariable @Positive(message = "User ID must be positive") Long userId,
             @RequestBody @NotEmpty(message = "Role names set cannot be empty") Set<String> roleNames) {
@@ -26,6 +28,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{userId}/roles")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<User> removeRoles(
             @PathVariable @Positive(message = "User ID must be positive") Long userId,
             @RequestBody @NotEmpty(message = "Role names set cannot be empty") Set<String> roleNames) {

@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -114,10 +115,10 @@ public class DataInitializer implements CommandLineRunner {
             throw new IllegalStateException("Superadmin email is required but not configured");
         }
         
-        // SECURITY FIX: Validate password strength
+        // SECURITY FIX: Validate password strength (relaxed for development)
         if (!isPasswordSecure(superadminPassword)) {
             log.error("SECURITY: Superadmin password does not meet security requirements");
-            throw new IllegalStateException("Superadmin password must be at least 12 characters with mixed case, numbers, and special characters");
+            throw new IllegalStateException("Superadmin password must be at least 8 characters with mixed case, numbers, and special characters");
         }
 
         // Check if superadmin user already exists
@@ -136,7 +137,7 @@ public class DataInitializer implements CommandLineRunner {
         Role superadminRole = roleRepository.findByName("SUPERADMIN")
                 .orElseThrow(() -> new RuntimeException("SUPERADMIN role not found. Roles must be created first."));
 
-        // Create superadmin user
+        // Create superadmin user with proper role assignment
         User superadmin = User.builder()
                 .username(superadminUsername)
                 .password(passwordEncoder.encode(superadminPassword))
@@ -148,17 +149,27 @@ public class DataInitializer implements CommandLineRunner {
                 .accountExpiryDate(LocalDateTime.now().plusYears(accountExpiryYears))
                 .build();
 
-        userRepository.save(superadmin);
+        User savedUser = userRepository.save(superadmin);
         
+        // Verify role assignment for hasRole() functionality
         log.info("Created superadmin user: {} with email: {}", superadminUsername, superadminEmail);
+        log.info("User ID: {}", savedUser.getId());
+        log.info("Assigned roles: {}", savedUser.getRoles().stream().map(Role::getName).collect(Collectors.toList()));
+        log.info("Spring Security authorities: {}", savedUser.getAuthorities());
+        
+        // Verify that hasRole('SUPERADMIN') will work
+        boolean hasSuperAdminRole = savedUser.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_SUPERADMIN"));
+        log.info("hasRole('SUPERADMIN') will return: {}", hasSuperAdminRole);
+        
         // SECURITY FIX: Never log the actual password
         log.warn("IMPORTANT: Please change the superadmin password after first login!");
         log.warn("SECURITY NOTICE: The superadmin account has been created. Consider disabling this initializer in production.");
     }
     
-    // SECURITY FIX: Add password strength validation
+    // SECURITY FIX: Add password strength validation (relaxed for development)
     private boolean isPasswordSecure(String password) {
-        if (password.length() < 12) return false;
+        if (password.length() < 8) return false;
         
         boolean hasUpper = password.chars().anyMatch(Character::isUpperCase);
         boolean hasLower = password.chars().anyMatch(Character::isLowerCase);

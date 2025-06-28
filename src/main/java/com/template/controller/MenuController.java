@@ -11,6 +11,7 @@ import com.template.service.MenuService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,8 +36,9 @@ public class MenuController {
     private final RoleMenuRepository roleMenuRepository;
     private final MenuService menuService;
 
-    // Create a menu (superadmin only)
+    // Create a menu (USER only)
     @PostMapping
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<?> createMenu(@Valid @RequestBody MenuCreateRequest request) {
         try {
             log.info("Creating menu with request: name={}, parentMenuId={}", 
@@ -87,30 +89,35 @@ public class MenuController {
 
     // List all menus (ordered by display order)
     @GetMapping
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public List<Menu> getAllMenus() {
         return menuService.getAllMenusOrdered();
     }
 
     // Get active menus only (ordered)
     @GetMapping("/active")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public List<Menu> getActiveMenus() {
         return menuService.getActiveMenusOrdered();
     }
 
     // Get root menus only (no parent)
     @GetMapping("/root")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public List<Menu> getRootMenus() {
         return menuService.getRootMenusOrdered();
     }
 
     // Get sub-menus for a parent menu
     @GetMapping("/{parentId}/submenu")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public List<Menu> getSubMenus(@PathVariable @Positive(message = "Parent ID must be positive") Long parentId) {
         return menuService.getSubMenusOrdered(parentId);
     }
 
     // Get menu by ID
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<Menu> getMenu(@PathVariable @Positive(message = "Menu ID must be positive") Long id) {
         return menuService.getMenuById(id)
                 .map(ResponseEntity::ok)
@@ -119,6 +126,7 @@ public class MenuController {
     
     // Debug endpoint - Get menu with parent details
     @GetMapping("/{id}/debug")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<Map<String, Object>> getMenuDebug(@PathVariable @Positive(message = "Menu ID must be positive") Long id) {
         Optional<Menu> menuOpt = menuRepository.findByIdWithParent(id);
         if (menuOpt.isEmpty()) {
@@ -141,6 +149,7 @@ public class MenuController {
 
     // Update menu
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<Menu> updateMenu(@PathVariable @Positive(message = "Menu ID must be positive") Long id, @Valid @RequestBody Menu menu) {
         try {
             return ResponseEntity.ok(menuService.updateMenu(id, menu));
@@ -151,6 +160,7 @@ public class MenuController {
 
     // Delete menu
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<Void> deleteMenu(@PathVariable @Positive(message = "Menu ID must be positive") Long id) {
         try {
             menuService.deleteMenu(id);
@@ -164,6 +174,7 @@ public class MenuController {
 
     // Move menu up by one position
     @PutMapping("/{id}/move-up")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<Menu> moveMenuUp(@PathVariable @Positive(message = "Menu ID must be positive") Long id) {
         try {
             return ResponseEntity.ok(menuService.moveMenuUp(id));
@@ -174,6 +185,7 @@ public class MenuController {
 
     // Move menu down by one position
     @PutMapping("/{id}/move-down")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<Menu> moveMenuDown(@PathVariable @Positive(message = "Menu ID must be positive") Long id) {
         try {
             return ResponseEntity.ok(menuService.moveMenuDown(id));
@@ -184,6 +196,7 @@ public class MenuController {
 
     // Move menu to specific position
     @PutMapping("/{id}/move-to/{position}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<?> moveMenuToPosition(@PathVariable @Positive(message = "Menu ID must be positive") Long id, @PathVariable @Positive(message = "Position must be positive") Integer position) {
         try {
             return ResponseEntity.ok(menuService.moveMenuToPosition(id, position));
@@ -194,6 +207,7 @@ public class MenuController {
 
     // Bulk reorder menus
     @PutMapping("/reorder")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<String> reorderMenus(@RequestBody @NotEmpty(message = "Menu IDs list cannot be empty") List<@Positive(message = "Each menu ID must be positive") Long> menuIds) {
         try {
             menuService.reorderMenus(menuIds);
@@ -205,6 +219,7 @@ public class MenuController {
 
     // Activate/Deactivate menu
     @PutMapping("/{id}/activate")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<String> activateMenu(@PathVariable @Positive(message = "Menu ID must be positive") Long id) {
         try {
             menuService.activateMenu(id);
@@ -215,6 +230,7 @@ public class MenuController {
     }
 
     @PutMapping("/{id}/deactivate")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<String> deactivateMenu(@PathVariable @Positive(message = "Menu ID must be positive") Long id) {
         try {
             menuService.deactivateMenu(id);
@@ -224,8 +240,9 @@ public class MenuController {
         }
     }
 
-    // Set menus for a role (superadmin only)
+    // Set menus for a role (USER only)
     @PostMapping("/role/{roleId}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<?> setMenusForRole(
             @PathVariable @Positive(message = "Role ID must be positive") Long roleId,
             @RequestBody @NotEmpty(message = "Menu IDs set cannot be empty") Set<@Positive(message = "Each menu ID must be positive") Long> menuIds) {
@@ -262,6 +279,7 @@ public class MenuController {
 
     // Get menus for a role
     @GetMapping("/role/{roleId}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<?> getMenusForRole(@PathVariable @Positive(message = "Role ID must be positive") Long roleId) {
         try {
             Optional<Role> roleOpt = roleRepository.findById(roleId);
@@ -283,6 +301,19 @@ public class MenuController {
         } catch (Exception e) {
             log.error("Error getting menus for role: {}", e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", "Failed to get menus for role"));
+        }
+    }
+
+    // Get all roles (for menu management UI)
+    @GetMapping("/roles")
+    @PreAuthorize("hasRole('SUPERADMIN')")
+    public ResponseEntity<List<Role>> getAllRoles() {
+        try {
+            List<Role> roles = roleRepository.findAll();
+            return ResponseEntity.ok(roles);
+        } catch (Exception e) {
+            log.error("Error getting roles: {}", e.getMessage());
+            return ResponseEntity.internalServerError().build();
         }
     }
 } 

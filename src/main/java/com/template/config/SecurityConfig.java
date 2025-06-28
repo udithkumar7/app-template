@@ -10,20 +10,18 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
     @Autowired
@@ -32,29 +30,55 @@ public class SecurityConfig {
     private TokenBlacklistService tokenBlacklistService;
     @Autowired
     private CustomUserDetailsService userDetailsService;
+    @Autowired
+    private CorsConfig corsConfig;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/login", "/api/auth/logout", "/api/auth/logout-all", "/api/auth/refresh", "/h2-console/**").permitAll()
+                // Public endpoints - no authentication required
+                .requestMatchers("/api/auth/login", "/api/auth/refresh").permitAll()
+                .requestMatchers("/api/init/**").permitAll()
                 .requestMatchers("/api/audit-test/**").permitAll()
-                .requestMatchers("/api/init/**").permitAll() // Allow access to initialization status
-                .requestMatchers("/api/jquery/**").permitAll() // Allow access to jQuery backend endpoints
-                //.requestMatchers(HttpMethod.GET, "/api/roles").permitAll() // Allow viewing roles
-                //.requestMatchers(HttpMethod.GET, "/api/menus/**").permitAll() // Allow viewing menus for testing
-                //.requestMatchers(HttpMethod.PUT, "/api/menus/**").permitAll() // Allow menu ordering for testing
-                //.requestMatchers(HttpMethod.POST, "/api/menus").permitAll() // Allow menu creation for testing
-                //.requestMatchers(HttpMethod.GET, "/api/location-codes/**").permitAll() // Allow viewing location codes for testing
-                //.requestMatchers(HttpMethod.PUT, "/api/location-codes/**").permitAll() // Allow location code ordering for testing
-                //.requestMatchers(HttpMethod.POST, "/api/location-codes").permitAll() // Allow location code creation for testing
-                //.requestMatchers(HttpMethod.POST, "/api/roles").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/menus/role/*").permitAll() // Allow menu role assignment for testing
-                //.requestMatchers(HttpMethod.POST, "/api/menus").permitAll() // Allow menu creation for testing
-                .requestMatchers("/api/users/crud/**").permitAll()
-                //.requestMatchers("/api/users/*/roles").permitAll()
+                .requestMatchers("/h2-console/**").permitAll()
+                
+                // Authentication endpoints - require authentication
+                .requestMatchers("/api/auth/logout", "/api/auth/logout-all").authenticated()
+                
+                // OTP endpoints - public for password reset and account unlock
                 .requestMatchers("/api/otp/**").permitAll()
+                
+                // User Management - CRUD operations
+                .requestMatchers(HttpMethod.GET, "/api/users/crud/**").hasAnyRole("SUPERADMIN", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/users/crud/**").permitAll()
+                .requestMatchers(HttpMethod.PUT, "/api/users/crud/**").hasAnyRole("SUPERADMIN", "ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/users/crud/**").hasRole("SUPERADMIN")
+                
+                // User Role Management
+                .requestMatchers("/api/users/*/roles").hasRole("SUPERADMIN")
+                
+                // Role Management - Superadmin only
+                .requestMatchers("/api/roles/**").hasRole("SUPERADMIN")
+                
+                // Menu Management - All authenticated users can access
+                .requestMatchers("/api/menus/**").hasAnyRole("SUPERADMIN", "ADMIN", "USER")
+                
+                // Location Code Management - Superadmin only
+                .requestMatchers("/api/location-codes/**").hasRole("SUPERADMIN")
+                
+                // Refresh Token Management - Superadmin only
+                .requestMatchers("/api/admin/refresh-tokens/**").hasRole("SUPERADMIN")
+                
+                // Product Management - Different access levels
+                .requestMatchers(HttpMethod.GET, "/api/jquery/products/**").hasAnyRole("SUPERADMIN", "ADMIN", "USER")
+                .requestMatchers(HttpMethod.POST, "/api/jquery/products/**").hasAnyRole("SUPERADMIN", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/jquery/products/**").hasAnyRole("SUPERADMIN", "ADMIN")
+                //.requestMatchers(HttpMethod.DELETE, "/api/jquery/products/**").hasRole("SUPERADMIN", "ADMIN")
+                
+                // Any other request requires authentication
                 .anyRequest().authenticated()
             )
             .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))

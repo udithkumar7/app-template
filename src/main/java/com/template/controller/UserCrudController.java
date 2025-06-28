@@ -8,6 +8,7 @@ import com.template.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +36,7 @@ public class UserCrudController {
     private int accountExpiryYears;
 
     @PostMapping
+    //@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<?> createUser(@Valid @RequestBody UserCreateRequest userRequest) {
         // Check if username already exists
         if (userRepository.findByUsername(userRequest.getUsername()).isPresent()) {
@@ -72,11 +74,13 @@ public class UserCrudController {
     }
 
     @GetMapping
+    //@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
     @GetMapping("/{id}")
+    //@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<User> getUser(@PathVariable @Positive(message = "User ID must be positive") Long id) {
         return userRepository.findById(id)
                 .map(ResponseEntity::ok)
@@ -84,6 +88,7 @@ public class UserCrudController {
     }
 
     @DeleteMapping("/{id}")
+    //@PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable @Positive(message = "User ID must be positive") Long id) {
         userRepository.deleteById(id);
         return ResponseEntity.noContent().build();

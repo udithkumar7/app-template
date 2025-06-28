@@ -49,7 +49,7 @@ public class AuthController {
         if (result.isSuccess()) {
             User user = result.getUser();
             Set<String> authorities = user.getRoles().stream()
-                .map(role -> role.getName())
+                .map(role -> "ROLE_" + role.getName())
                 .collect(java.util.stream.Collectors.toSet());
             
             // Generate access token
@@ -92,8 +92,9 @@ public class AuthController {
                 throw new RuntimeException("User not found for refresh token");
             }
             
+            // Fix: Include ROLE_ prefix in authorities for hasRole() to work
             Set<String> authorities = user.getRoles().stream()
-                    .map(role -> role.getName())
+                    .map(role -> "ROLE_" + role.getName())
                     .collect(java.util.stream.Collectors.toSet());
             
             // Generate new access token

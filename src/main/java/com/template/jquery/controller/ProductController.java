@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,6 +38,7 @@ public class ProductController {
      * This endpoint is specifically designed for jQuery DataTables integration
      */
     @PostMapping("/datatable")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'USER')")
     public ResponseEntity<DataTableResponse<Product>> getProductsDataTable(@Valid @RequestBody DataTableRequest request) {
         log.info("DataTable request received: draw={}, start={}, length={}, search={}", 
                 request.getDraw(), request.getStart(), request.getLength(), request.getSearchValue());
@@ -49,6 +51,7 @@ public class ProductController {
      * Advanced filtering endpoint with custom criteria
      */
     @PostMapping("/filter")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'USER')")
     public ResponseEntity<Page<Product>> getProductsWithFilters(
             @Valid @RequestBody ProductFilterRequest filter,
             @RequestParam(defaultValue = "0") int page,
@@ -69,6 +72,7 @@ public class ProductController {
      * Get all products with pagination and sorting
      */
     @GetMapping
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'USER')")
     public ResponseEntity<Page<Product>> getAllProducts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -86,6 +90,7 @@ public class ProductController {
      * Get product by ID
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'USER')")
     public ResponseEntity<Product> getProductById(@PathVariable Long id) {
         Optional<Product> product = productRepository.findById(id);
         return product.map(ResponseEntity::ok)
@@ -96,6 +101,7 @@ public class ProductController {
      * Search products by global search term
      */
     @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'USER')")
     public ResponseEntity<List<Product>> searchProducts(@RequestParam String q) {
         List<Product> products = productRepository.findByGlobalSearch(q);
         return ResponseEntity.ok(products);
@@ -105,6 +111,7 @@ public class ProductController {
      * Get products by category
      */
     @GetMapping("/category/{category}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'USER')")
     public ResponseEntity<List<Product>> getProductsByCategory(@PathVariable String category) {
         List<Product> products = productRepository.findByCategory(category);
         return ResponseEntity.ok(products);
@@ -114,6 +121,7 @@ public class ProductController {
      * Get products by brand
      */
     @GetMapping("/brand/{brand}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'USER')")
     public ResponseEntity<List<Product>> getProductsByBrand(@PathVariable String brand) {
         List<Product> products = productRepository.findByBrand(brand);
         return ResponseEntity.ok(products);
@@ -123,6 +131,7 @@ public class ProductController {
      * Get products in price range
      */
     @GetMapping("/price-range")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'USER')")
     public ResponseEntity<List<Product>> getProductsByPriceRange(
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice) {
@@ -145,6 +154,7 @@ public class ProductController {
      * Get active products only
      */
     @GetMapping("/active")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'USER')")
     public ResponseEntity<List<Product>> getActiveProducts() {
         List<Product> products = productRepository.findByActiveTrue();
         return ResponseEntity.ok(products);
@@ -154,6 +164,7 @@ public class ProductController {
      * Get featured products only
      */
     @GetMapping("/featured")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'USER')")
     public ResponseEntity<List<Product>> getFeaturedProducts() {
         List<Product> products = productRepository.findByFeaturedTrue();
         return ResponseEntity.ok(products);
@@ -163,6 +174,7 @@ public class ProductController {
      * Get product statistics
      */
     @GetMapping("/statistics")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'USER')")
     public ResponseEntity<Map<String, Object>> getProductStatistics() {
         Map<String, Object> stats = Map.of(
             "totalProducts", productRepository.count(),
@@ -181,6 +193,7 @@ public class ProductController {
      * Create new product
      */
     @PostMapping
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<Product> createProduct(@Valid @RequestBody Product product) {
         Product savedProduct = productRepository.save(product);
         return ResponseEntity.ok(savedProduct);
@@ -190,6 +203,7 @@ public class ProductController {
      * Update existing product
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<Product> updateProduct(@PathVariable Long id, @Valid @RequestBody Product product) {
         if (!productRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
@@ -204,6 +218,7 @@ public class ProductController {
      * Delete product
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         if (!productRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
@@ -217,6 +232,7 @@ public class ProductController {
      * Bulk operations endpoint for jQuery integration
      */
     @PostMapping("/bulk")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> bulkOperations(@RequestBody Map<String, Object> request) {
         String operation = (String) request.get("operation");
         @SuppressWarnings("unchecked")
