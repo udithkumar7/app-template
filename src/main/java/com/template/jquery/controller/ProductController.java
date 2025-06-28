@@ -6,9 +6,12 @@ import com.template.jquery.dto.ProductFilterRequest;
 import com.template.jquery.entity.Product;
 import com.template.jquery.repository.ProductRepository;
 import com.template.jquery.service.ProductQueryService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -275,5 +279,55 @@ public class ProductController {
             "affectedRows", affectedRows,
             "success", true
         ));
+    }
+
+    @GetMapping("/export")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'USER')")
+    public void exportProductsToExcel(
+        @RequestParam(defaultValue = "name") String sortBy,
+        @RequestParam(defaultValue = "asc") String sortDir,
+        @RequestParam(required = false) String globalSearch,
+        @RequestParam(required = false) String category,
+        @RequestParam(required = false) String brand,
+        HttpServletResponse response
+    ) throws IOException {
+        // Build filter object
+        ProductFilterRequest filter = new ProductFilterRequest();
+        filter.setGlobalSearch("undefined".equals(globalSearch) ? null : globalSearch);
+        filter.setCategory("undefined".equals(category) ? null : category);
+        filter.setBrand("undefined".equals(brand) ? null : brand);
+
+        // Build sort
+        Sort.Direction direction = "desc".equalsIgnoreCase(sortDir) ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Sort sort = Sort.by(direction, sortBy);
+
+        // Fetch all filtered products (no pagination)
+        List<Product> products = productQueryService.findAllWithAdvancedFilters(filter, sort);
+
+        // Generate Excel file using Apache POI
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Products");
+        int rowIdx = 0;
+        Row header = sheet.createRow(rowIdx++);
+        String[] columns = {"ID", "Name", "Description", "Category", "Brand", "Price", "Stock", "Active", "Featured"};
+        for (int i = 0; i < columns.length; i++) header.createCell(i).setCellValue(columns[i]);
+
+        for (Product p : products) {
+            Row row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(p.getId());
+            row.createCell(1).setCellValue(p.getName());
+            row.createCell(2).setCellValue(p.getDescription());
+            row.createCell(3).setCellValue(p.getCategory());
+            row.createCell(4).setCellValue(p.getBrand());
+            row.createCell(5).setCellValue(p.getPrice() != null ? p.getPrice().doubleValue() : 0);
+            row.createCell(6).setCellValue(p.getStockQuantity());
+            row.createCell(7).setCellValue(p.getActive());
+            row.createCell(8).setCellValue(p.getFeatured());
+        }
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=products.xlsx");
+        workbook.write(response.getOutputStream());
+        workbook.close();
     }
 } 

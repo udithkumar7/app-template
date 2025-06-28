@@ -43,6 +43,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login", "/api/auth/refresh").permitAll()
                 .requestMatchers("/api/init/**").permitAll()
                 .requestMatchers("/api/audit-test/**").permitAll()
+                .requestMatchers("/api/crypto/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 
                 // Authentication endpoints - require authentication

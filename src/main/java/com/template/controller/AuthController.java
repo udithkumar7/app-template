@@ -67,6 +67,7 @@ public class AuthController {
             response.setMessage("Login successful");
             response.setAccessTokenExpiresIn(accessTokenExpiration);
             response.setRefreshTokenExpiresIn(refreshTokenExpiration);
+            response.setRoles(new java.util.ArrayList<>(authorities));
             
             return ResponseEntity.ok(response);
         } else {

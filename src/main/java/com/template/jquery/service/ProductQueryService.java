@@ -302,4 +302,22 @@ public class ProductQueryService {
             default -> null;
         };
     }
+
+    public List<Product> findAllWithAdvancedFilters(ProductFilterRequest filter, org.springframework.data.domain.Sort sort) {
+        JPAQuery<Product> query = queryFactory.selectFrom(qProduct);
+        BooleanBuilder whereClause = buildAdvancedFilterExpression(filter);
+        if (whereClause.hasValue()) {
+            query.where(whereClause);
+        }
+        // Apply sorting
+        if (sort != null && sort.isSorted()) {
+            sort.forEach(order -> {
+                OrderSpecifier<?> orderSpecifier = buildOrderSpecifier(order.getProperty(), order.getDirection().name());
+                if (orderSpecifier != null) {
+                    query.orderBy(orderSpecifier);
+                }
+            });
+        }
+        return query.fetch();
+    }
 } 

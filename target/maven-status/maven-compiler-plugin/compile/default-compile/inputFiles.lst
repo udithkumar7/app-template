@@ -23,6 +23,7 @@ C:\Users\2010892\Documents\template\app-template\src\main\java\com\template\jque
 C:\Users\2010892\Documents\template\app-template\src\main\java\com\template\config\SecurityConfig.java
 C:\Users\2010892\Documents\template\app-template\src\main\java\com\template\service\UserSessionService.java
 C:\Users\2010892\Documents\template\app-template\src\main\java\com\template\controller\UserController.java
+C:\Users\2010892\Documents\template\app-template\src\main\java\com\template\config\CorsConfig.java
 C:\Users\2010892\Documents\template\app-template\src\main\java\com\template\config\ProductionDataInitializer.java
 C:\Users\2010892\Documents\template\app-template\src\main\java\com\template\controller\MenuController.java
 C:\Users\2010892\Documents\template\app-template\src\main\java\com\template\service\impl\UserServiceImpl.java
@@ -35,6 +36,7 @@ C:\Users\2010892\Documents\template\app-template\src\main\java\com\template\serv
 C:\Users\2010892\Documents\template\app-template\src\main\java\com\template\config\DataInitializer.java
 C:\Users\2010892\Documents\template\app-template\src\main\java\com\template\service\TokenBlacklistService.java
 C:\Users\2010892\Documents\template\app-template\src\main\java\com\template\jquery\config\QueryDslConfig.java
+C:\Users\2010892\Documents\template\app-template\src\main\java\com\template\controller\CryptoController.java
 C:\Users\2010892\Documents\template\app-template\src\main\java\com\template\service\AuditService.java
 C:\Users\2010892\Documents\template\app-template\src\main\java\com\template\controller\OtpController.java
 C:\Users\2010892\Documents\template\app-template\src\main\java\com\template\controller\CodeController.java
